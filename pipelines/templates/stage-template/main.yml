@@ -1,0 +1,10 @@
+stages:
+- template: test.yml  # Template reference
+  parameters:
+    name: Mini
+    testFile: tests/miniSuite.js
+
+- template: test.yml  # Template reference
+  parameters:
+    name: Full
+    testFile: tests/fullSuite.js

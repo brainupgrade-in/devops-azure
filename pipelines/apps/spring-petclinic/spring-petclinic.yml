@@ -1,0 +1,144 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  SCANNER_HOME: $(SonarQubeTool.SonarQubeScanner)
+
+jobs:
+- job: BuildAndTest
+  displayName: "Build, Test, and Analyze"
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+
+  - task: Maven@4
+    displayName: 'Maven Compile'
+    inputs:
+      mavenPomFile: 'pom.xml'
+      goals: 'clean compile -Dcheckstyle.skip'
+
+  - task: Maven@4
+    displayName: 'Maven JUnit Tests'
+    inputs:
+      mavenPomFile: 'pom.xml'
+      goals: 'test -Dcheckstyle.skip jacoco:report'
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFiles: '**/target/surefire-reports/*.xml'
+      failTaskOnFailedTests: true
+
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: 'JaCoCo'
+      summaryFileLocation: '**/target/site/jacoco/jacoco.xml'
+      reportDirectory: 'target/site/jacoco'
+      failIfCoverageEmpty: true
+
+  - task: Maven@4
+    displayName: 'Build Package'
+    inputs:
+      mavenPomFile: 'pom.xml'
+      goals: 'install -Dcheckstyle.skip -DskipTests'
+
+  - task: SonarQubePrepare@5
+    inputs:
+      SonarQube: 'SonarQubeServer'
+      scannerMode: 'CLI'
+      configMode: 'manual'
+      cliProjectKey: 'Petclinic'
+      cliProjectName: 'Petclinic'
+
+  - task: Bash@3
+    displayName: 'SonarQube Analysis'
+    inputs:
+      targetType: 'inline'
+      script: |
+        $(SCANNER_HOME)/bin/sonar-scanner -Dsonar.projectName=Petclinic -Dsonar.java.binaries=.
+
+  - task: Docker@2
+    displayName: 'Docker Build and Push'
+    inputs:
+      containerRegistry: 'docker-hub-credentials'
+      repository: 'brainupgrade/spring-petclinic'
+      command: 'buildAndPush'
+      dockerfile: '**/Dockerfile'
+      tags: '$(Build.SourceVersion)'
+
+  - task: Bash@3
+    displayName: 'Image Scan with Trivy'
+    inputs:
+      targetType: 'inline'
+      script: |
+        wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
+        trivy image --severity HIGH,CRITICAL --format template --template '@html.tpl' --output image-cve.html brainupgrade/spring-petclinic:$(Build.SourceVersion)
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: 'image-cve.html'
+      artifactName: 'ImageScan-CVE-Trivy-Report'
+      publishLocation: 'Container'
+
+  - task: Bash@3
+    displayName: 'Deploy to E2E'
+    condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
+    inputs:
+      targetType: 'inline'
+      script: |
+        git clone https://$(GIT_CREDS_USR):$(GIT_CREDS_PSW)@github.com/brainupgrade-in/gitops-k8s-apps.git
+        git config --global user.email 'ci@ci.com'
+        cd gitops-k8s-apps/petclinic/e2e
+        kustomize edit set image brainupgrade/spring-petclinic:$(Build.SourceVersion)
+        git commit -am 'Publish new version'
+        git push || echo 'no changes'
+
+  - task: Bash@3
+    displayName: 'Performance Tests with JMeter'
+    inputs:
+      targetType: 'inline'
+      script: |
+        /bin/bash -c "echo -n 'Waiting for petclinic to be up http://petclinic.e2e.svc.cluster.local ...' && until nc -z petclinic.e2e.svc.cluster.local 80; do sleep 1 && echo -n .; done && echo 'http://petclinic.e2e.svc.cluster.local is up now!'"
+        jmeter -n -t src/test/jmeter/petclinic_test_plan.jmx -l result.jtl -e -o result
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: 'result'
+      artifactName: 'JMeter-Report'
+      publishLocation: 'Container'
+
+  - task: Bash@3
+    displayName: 'Deploy to UAT'
+    condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
+    inputs:
+      targetType: 'inline'
+      script: |
+        cd gitops-k8s-apps/petclinic/uat
+        kustomize edit set image brainupgrade/spring-petclinic:$(Build.SourceVersion)
+        git commit -am 'Publish new version'
+        git push || echo 'no changes'
+
+  - task: Bash@3
+    displayName: 'Deploy to Prod'
+    condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
+    inputs:
+      targetType: 'inline'
+      script: |
+        cd gitops-k8s-apps/petclinic/prod
+        kustomize edit set image brainupgrade/spring-petclinic:$(Build.SourceVersion)
+        git commit -am 'Publish new version'
+        git push || echo 'no changes'
+
+  - task: Docker@2
+    displayName: 'Push Latest Tag'
+    condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
+    inputs:
+      containerRegistry: 'docker-hub-credentials'
+      repository: 'brainupgrade/spring-petclinic'
+      command: 'tagAndPush'
+      tags: 'latest'

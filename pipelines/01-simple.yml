@@ -1,0 +1,14 @@
+trigger:
+- main
+
+pool:
+  name: selfhosted
+  
+jobs:
+- job: simpleJob
+  displayName: "Run simple job on self-hosted agent"
+
+  steps:
+  - script: |
+      echo "Hello, this is a simple job running on a self-hosted agent named 'agent'!"
+    displayName: "Run simple script"

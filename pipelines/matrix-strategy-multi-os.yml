@@ -1,0 +1,23 @@
+# Build NodeJS Express app using Azure Pipelines
+# https://learn.microsoft.com/azure/devops/pipelines/ecosystems/javascript?view=azure-devops
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-latest'
+    mac:
+      imageName: 'macOS-latest'
+    windows:
+      imageName: 'windows-latest'
+  maxParallel: 3 # max 3 parallel jobs    
+
+pool:
+  vmImage: $(imageName)
+
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: '8.x'
+
+- script: |
+    npm install
+    npm test

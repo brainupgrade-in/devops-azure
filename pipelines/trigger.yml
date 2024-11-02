@@ -1,0 +1,10 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - features/*
+    exclude:
+    - features/experimental/*
+  paths:
+    exclude:
+    - README.md

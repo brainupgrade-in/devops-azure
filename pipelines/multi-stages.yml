@@ -1,0 +1,24 @@
+trigger:
+- main
+
+pool: 
+  vmImage: ubuntu-latest
+
+stages:
+- stage: CI
+  jobs:
+  - job: CIWork1
+    steps:
+    - script: "echo Do CI 1 work"
+  - job: CIWork2
+    steps:
+    - script: "echo Do CI 2 work"
+
+- stage: Test
+  jobs:
+  - job: TestWork1
+    steps:
+    - script: "echo Do test 1 work"
+  - job: TestWork2
+    steps:
+    - script: "echo Do test 2 work"  

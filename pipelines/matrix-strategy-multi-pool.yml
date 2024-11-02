@@ -1,0 +1,17 @@
+strategy:
+  matrix:
+    microsofthosted:
+      poolName: Azure Pipelines
+      vmImage: ubuntu-latest
+
+    selfhosted:
+      poolName: selfhosted
+      vmImage:
+
+pool:
+  name: $(poolName)
+  vmImage: $(vmImage)
+
+steps:
+- checkout: none
+- script: echo test

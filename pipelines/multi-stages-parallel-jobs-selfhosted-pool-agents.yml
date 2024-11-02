@@ -1,0 +1,26 @@
+trigger:
+- main
+
+pool: 
+#   vmImage: ubuntu-latest # comment this for parallel job execution on selfhosted pool agents
+  name: selfhosted  # uncomment this for parallel job execution on selfhosted pool agents
+
+stages:
+- stage: CI
+  jobs:
+  - job: CIWork1
+    steps:
+    - script: "echo Do CI 1 work"
+  - job: CIWork2
+    steps:
+    - script: "echo Do CI 2 work"
+
+- stage: Test
+  # dependsOn: [] # Uncomment to run this stage in parallel.  By specifying an empty array, this stage doesn't depend on the stage before it
+  jobs:
+  - job: TestWork1
+    steps:
+    - script: "echo Do test 1 work"
+  - job: TestWork2
+    steps:
+    - script: "echo Do test 2 work"  
