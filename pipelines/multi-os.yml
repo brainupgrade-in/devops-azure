@@ -17,6 +17,7 @@ jobs:
   - script: "Do pre-work"
 
 - job: PostWork
-  pool: windows-latest
+  pool: 
+      vmImage: windows-latest
   steps:
   - script: "Do post-work using a different hosted image"
