@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app
+spec:
+  ingressClassName: ingress
+  rules:
+  - host: mtvlabk8su1-app.brainupgrade.in
+    http:
+      paths:
+      - backend:
+          service:
+            name: hello-e2e
+            port:
+              number: 8080
+        path: /?(.*)
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: hello-e2e
+            port:
+              number: 8080
+        path: /e2e/?(.*)
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: hello-uat
+            port:
+              number: 8080
+        path: /uat/?(.*)
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: hello-prod
+            port:
+              number: 8080
+        path: /prod/?(.*)
+        pathType: ImplementationSpecific                

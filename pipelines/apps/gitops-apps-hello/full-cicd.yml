@@ -1,0 +1,22 @@
+trigger: none
+
+pool:
+  # vmImage: 'ubuntu-latest'
+  name: selfhosted
+
+variables:
+  dockerImageName: 'brainupgrade/gitops-apps-hello'
+  appName: 'hello'
+
+stages:
+- template: build.yml
+  parameters:
+    dockerImageName: '$(dockerImageName)'
+- template: deploy-environment.yml
+  parameters:
+    environment: 'e2e'
+    appName: '${{variables.appName}}'    
+- template: deploy-environment.yml
+  parameters:
+    environment: 'uat'
+    appName: '${{variables.appName}}'
