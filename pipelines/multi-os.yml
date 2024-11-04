@@ -18,6 +18,7 @@ jobs:
       echo "do some prep work"
 
 - job: PostWork
+  dependsOn: PreWork
   pool: 
       vmImage: windows-latest
   steps:
