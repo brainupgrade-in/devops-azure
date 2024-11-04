@@ -1,5 +1,12 @@
 trigger:
-- main
+  branches:
+    exclude:
+      - '*'  # Prevent regular push triggers
+
+pr:
+  branches:
+    exclude:
+      - '*'  # Trigger on pull request to main branch
 
 pool:
   name: selfhosted
