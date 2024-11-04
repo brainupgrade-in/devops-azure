@@ -1,4 +1,11 @@
-trigger: none
+trigger:
+  branches:
+    exclude:
+      - '*'  # Prevent regular push triggers
+pr:
+  branches:
+    exclude:
+      - '*'  # Don't trigger on PRs
 pool:
   name: selfhosted
 resources:
