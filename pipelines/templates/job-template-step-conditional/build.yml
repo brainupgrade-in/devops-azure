@@ -7,7 +7,6 @@ jobs:
 - job: ${{ parameters.name }}
   pool: ${{ parameters.pool }}
   steps:
-  - script: npm install
-  - script: npm test
+  - script: "echo first step"
   - ${{ if eq(parameters.sign, 'true') }}:
-    - script: sign
+    - script: "echo conditional sign step"
