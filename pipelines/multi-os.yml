@@ -14,10 +14,12 @@ pool:
 jobs:
 - job: PreWork
   steps:
-  - script: "Do pre-work"
+  - script: |
+      echo "do some prep work"
 
 - job: PostWork
   pool: 
       vmImage: windows-latest
   steps:
-  - script: "Do post-work using a different hosted image"
+  - script: |
+      echo "Do post-work using a different hosted image"
