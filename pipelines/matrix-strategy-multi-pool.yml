@@ -1,3 +1,11 @@
+trigger:
+  branches:
+    exclude:
+      - '*'  # Prevent regular push triggers
+pr:
+  branches:
+    exclude:
+      - '*'  # Don't trigger on PRs
 strategy:
   matrix:
     microsofthosted:
