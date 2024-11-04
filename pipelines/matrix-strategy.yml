@@ -1,27 +1,32 @@
+trigger:
+  branches:
+    exclude:
+      - '*'  # Prevent regular push triggers
+pr:
+  branches:
+    exclude:
+      - '*'  # Don't trigger on PRs
+
 resources:
   containers:
-  - container: u14
-    image: ubuntu:14.04
+  - container: u22
+    image: ubuntu:22.04
+  - container: u24
+    image: ubuntu:24.04
 
-  - container: u16
-    image: ubuntu:16.04
-
-  - container: u18
-    image: ubuntu:18.04
 
 jobs:
 - job: RunInContainer
   pool:
-    vmImage: 'ubuntu:latest'
+    # vmImage: 'ubuntu:latest'
+    name: selfhosted
 
   strategy:
     matrix:
-      ubuntu14:
-        containerResource: u14
-      ubuntu16:
-        containerResource: u16
-      ubuntu18:
-        containerResource: u18
+      ubuntu22:
+        containerResource: u22
+      ubuntu24:
+        containerResource: u24
 
   container: $[ variables['containerResource'] ]
 
