@@ -6,9 +6,10 @@ trigger:
 pr:
   branches:
     exclude:
-      - '*'  # Trigger on pull request to main branch
+      - '*'  # Don't trigger on PRs
 
 pool:
+  # vmImage: ubuntu-latest
   name: selfhosted
   
 jobs:
