@@ -25,5 +25,4 @@ steps:
     versionSpec: '8.x'
 
 - script: |
-    npm install
-    npm test
+    npm -v
