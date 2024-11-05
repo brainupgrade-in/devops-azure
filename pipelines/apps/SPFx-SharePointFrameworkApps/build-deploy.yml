@@ -1,0 +1,74 @@
+# SPFx CI/CD Pipeline for SharePoint Online App
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'windows-latest'  # Windows is preferred for SPFx
+
+variables:
+  NODE_VERSION: '14.x'        # Node.js version compatible with SPFx
+  BUILD_DIR: 'lib'            # Directory where build artifacts are stored
+  PACKAGE_SOLUTION_DIR: 'sharepoint/solution'  # Path to solution folder
+
+steps:
+
+# Step 1: Install Node.js
+- task: UseNode@1
+  inputs:
+    versionSpec: $(NODE_VERSION)
+
+# Step 2: Install Dependencies
+- task: Npm@1
+  inputs:
+    command: 'install'
+    workingDir: '$(System.DefaultWorkingDirectory)'
+
+# Step 3: Lint Code (Optional)
+- script: |
+    npm run lint
+  displayName: 'Run Lint Check'
+
+# Step 4: Build the SPFx Project
+- script: |
+    npm run build
+  displayName: 'Build SPFx Project'
+
+# Step 5: Bundle the SPFx Project
+- script: |
+    npm run bundle -- --ship
+  displayName: 'Bundle SPFx Project'
+
+# Step 6: Package the Solution
+- script: |
+    npm run package-solution -- --ship
+  displayName: 'Package SPFx Solution'
+
+# Step 7: Publish Package to Artifact (for deployment or download)
+- publish: $(PACKAGE_SOLUTION_DIR)
+  artifact: 'SPFxPackage'
+  displayName: 'Publish SPFx Package as Artifact'
+
+# Optional: Step 8: Deploy to SharePoint Online App Catalog
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      # Connect to SharePoint Online (requires PnP PowerShell module)
+      $username = "$(SP_USER)"
+      $password = "$(SP_PASSWORD)" | ConvertTo-SecureString -AsPlainText -Force
+      $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $username, $password
+
+      # Replace with your SharePoint Admin site URL
+      Connect-PnPOnline -Url https://yourtenant-admin.sharepoint.com -Credentials $credential
+
+      # Deploy SPFx Package
+      $packagePath = "$(System.DefaultWorkingDirectory)/$(PACKAGE_SOLUTION_DIR)/your-package-name.sppkg"
+      Add-PnPApp -Path $packagePath -Scope Tenant -Publish
+
+  displayName: 'Deploy SPFx Package to SharePoint Online'
+  env:
+    SP_USER: $(SP_USER)         # Username for SharePoint Online
+    SP_PASSWORD: $(SP_PASSWORD) # Password for SharePoint Online
